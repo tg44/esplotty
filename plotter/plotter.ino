@@ -3,34 +3,14 @@
 #include <Servo.h>
 #include <math.h>
 
-Servo servo1;  
-Servo servo2; 
-Servo servoLift; 
-
-void setup() {
-  servo1.attach(5);
-  servo2.attach(4);
-  servoLift.attach(0);
-}
-
-void loop() {
-  int pos;
-
-  for (pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
-    // in steps of 1 degree
-    servo1.write(pos);              // tell servo to go to position in variable 'pos'
-    servo2.write(pos);    
-    servoLift.write(pos);    
-    delay(15);                       // waits 15ms for the servo to reach the position
-  }
-  for (pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
-    servo1.write(pos);         
-    servo2.write(pos);    
-    servoLift.write(pos);  
-    delay(15);                       // waits 15ms for the servo to reach the position
-  }
-}
-
+typedef struct {
+  int g = 0;
+  double x = 0.0;
+  double y = 0.0;
+  double z = 0.0;
+  double i = 0.0;
+  double j = 0.0;
+} GCode;
 
 typedef struct point {
   double x;
@@ -66,7 +46,60 @@ Point getXYFromCycle(Point o, double r, double omega);
 void interpolateCCW(Point o, Point curr, Point end, Settings s);
 void interpolateCW(Point o, Point curr, Point end, Settings s);
 
+GCode parseGcode(char* s, GCode prev);
 
+
+
+
+
+
+Servo servo1;  
+Servo servo2; 
+Servo servoLift; 
+
+Settings settings = Settings{70,70,25,1,1};
+GCode prevGcode;
+
+void setup() {
+  servo1.attach(5);
+  servo2.attach(4);
+  servoLift.attach(0);
+
+  Serial.begin(115200);
+  Serial.println("!!!!!!");
+  Serial.println("!!!!!!");
+  test();
+}
+
+void loop() {
+  
+  if(Serial.available()){
+    String s = Serial.readString();
+    Serial.println(s);
+    run(s.c_str());
+  }
+}
+
+void test() {
+  char *s = "G01 X5 Z-0.125000 F100.0(Penetrate)";
+  int c;
+  double x=12;
+  double y=12;
+  double z;
+  double f;
+  int o=0;
+  o = sscanf(s, "G%d", &c);
+  o = sscanf(s, "%*[^X]X%lf", &x);
+  o = sscanf(s, "%*[^Y]Y%lf", &y);
+  o = sscanf(s, "%*[^Z]Z%lf", &z);
+  
+  Serial.println(o);
+  Serial.println(c);
+  Serial.println(x);
+  Serial.println(y);
+  Serial.println(z);
+  Serial.println(f);
+}
 
 
 
@@ -96,6 +129,7 @@ Point calcAngles(Point p, Settings s) {
 void moveToAngle(Point p, Settings s) {
   servo1.write((int)(p.x+.5)); //round it      
   servo2.write((int)(p.y+.5)); //round it
+  Serial.println((String)"x="+(int)(p.x+.5)+" y="+(int)(p.y+.5));
   delay(s.del);
 }
 
@@ -134,7 +168,9 @@ void interpolateLine(Point start, Point v, double steps, Settings s) {
     Point a = calcAngles(to, s);
     actualPos = to;
     moveToAngle(a, s);
+    Serial.print(".");
   }
+  Serial.println("");
 }
 
 double calcAngle(Point o, Point p) {
@@ -190,21 +226,13 @@ void interpolateCW(Point o, Point curr, Point end, Settings s) {
   moveFastTo(end, s);
 }
 
-typedef struct {
-  int g = 0;
-  double x = 0.0;
-  double y = 0.0;
-  double z = 0.0;
-  double i = 0.0;
-  double j = 0.0;
-} GCode;
 
-GCode parseGcode(char* s, GCode prev);
-
-GCode parseGcode(char* s, GCode prev) {
+GCode parseGcode(const char* s, GCode prev) {
   int o = 0;
   int c = 0;
-  o = sscanf(s, "%*[^G]G%d", &c);
+  o = sscanf(s, "G%d", &c);
+  Serial.println(String("o=")+o);
+  Serial.println(String("c=")+c);
   if(o == 1) {
     GCode next = prev;
     next.g = c;
@@ -221,17 +249,21 @@ GCode parseGcode(char* s, GCode prev) {
   }
 }
 
-Settings settings;
-GCode prevGcode;
-void run(char* s) {
+
+void run(const char* s) {
   GCode next = parseGcode(s, prevGcode);
+  
   if(next.g < 0){
+    Serial.println("g < 0");
     return;
   }
   if(next.z != prevGcode.z) {
+    Serial.println("z != z");
     if(next.z > settings.safeZ) {
+      Serial.println("z > safe");
       servoLift.write(0);
     } else {
+      Serial.println("z < safe");
       servoLift.write(90);
     }
   }
@@ -253,4 +285,5 @@ void run(char* s) {
     default:
       break;
   }
+  prevGcode = next;
 }
