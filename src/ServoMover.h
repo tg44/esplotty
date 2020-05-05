@@ -7,7 +7,7 @@
 
 class ServoMover: public Mover {
   public:             
-    void moveToAngle(float x, float y) {
+    void moveToAngle(const float& x, const float& y) {
         servo1.write((int)(x+.5)); //round it      
         servo2.write((int)(y+.5)); //round it
         #ifdef DEBUG
@@ -36,6 +36,10 @@ class ServoMover: public Mover {
             Serial.println((String)"pen down");
       #endif
       delay(penDownDegrees);
+    }
+    void lifterToAngle(const float& a) {
+        servoLift.write(a);
+        delay(penDownDegrees);
     }
   private:
     Servo servo1;  

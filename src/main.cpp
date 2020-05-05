@@ -66,6 +66,10 @@ void runOnce(const char* s) {
         moverMath.moveStraightRelativeTo(Point{next.x, next.y}, Point{-2, 2});
         servoMover.penUp();
         break;
+    case 80:
+        servoMover.moveToAngle(next.x, next.y);
+        servoMover.lifterToAngle(next.z);
+        break;
     default:
       break;
   }
