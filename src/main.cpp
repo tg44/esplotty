@@ -9,7 +9,13 @@ MoverMath moverMath;
 GCode prevGcode;
 
 void setup() {
-  servoMover.setup(5,4,0,25);
+  //random constants:
+  // 5, 4, 0 the first, second and Z servo pins
+  // 25 is the servo delay
+  // 0 and 90 the pen up/down angles in degrees
+  // 70 70 is the first and second hand distance in mm
+  // 1 is the resolution (means we do a mm resolution)
+  servoMover.setup(5, 4, 0, 25, 0, 90);
   moverMath.setup(70, 70, 1, &servoMover);
 
   Serial.begin(115200);
@@ -49,6 +55,17 @@ void runOnce(const char* s) {
     case 3:
       moverMath.moveCCW(o, curr, Point{next.x, next.y});
       break;
+    case 66:
+        servoMover.penUp();
+        moverMath.moveFastRelativeTo(Point{next.x, next.y}, Point{-2, -2});
+        servoMover.penDown();
+        moverMath.moveStraightRelativeTo(Point{next.x, next.y}, Point{2, 2});
+        servoMover.penUp();
+        moverMath.moveFastRelativeTo(Point{next.x, next.y}, Point{2, -2});
+        servoMover.penDown();
+        moverMath.moveStraightRelativeTo(Point{next.x, next.y}, Point{-2, 2});
+        servoMover.penUp();
+        break;
     default:
       break;
   }

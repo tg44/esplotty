@@ -15,14 +15,16 @@ class ServoMover: public Mover {
         #endif
         delay(delayMs);
     }
-    void setup(int a, int b, int c, int _delayMs) {
+    void setup(int a, int b, int c, int _delayMs, int _penup, int _pendown) {
       servo1.attach(a);
       servo2.attach(b);
       servoLift.attach(c);
       delayMs = _delayMs;
+      penUpDegrees = _penup;
+      penDownDegrees = _pendown;
     }
     void penUp() {
-      servoLift.write(0);
+      servoLift.write(penUpDegrees);
       #ifdef DEBUG
             Serial.println((String)"pen up");
       #endif
@@ -33,12 +35,14 @@ class ServoMover: public Mover {
       #ifdef DEBUG
             Serial.println((String)"pen down");
       #endif
-      delay(delayMs);
+      delay(penDownDegrees);
     }
   private:
     Servo servo1;  
     Servo servo2; 
     Servo servoLift; 
     int delayMs = 15;
+    int penUpDegrees;
+    int penDownDegrees;
 };
 #endif
